@@ -2,64 +2,81 @@ package file
 
 import (
 	"crypto/sha1"
-	"fmt"
 
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 type Sha = [sha1.Size]byte
 
-type History struct {
-	first         string
-	last          string
-	patches       []string
-	checksums     []Sha
-	firstChecksum Sha
+type HistoryNode struct {
+	content  *string
+	parent   *HistoryNode
+	patches  []diffmatchpatch.Patch
+	checksum Sha
+	children []*HistoryNode
 }
 
-func NewHistory(contents string) History {
+// NewHistory creates a new history tree and returns
+// the root node.
+func NewHistory(contents string) *HistoryNode {
 	sum := sha1.Sum([]byte(contents))
-	return History{
-		first:         contents,
-		last:          contents,
-		patches:       nil,
-		checksums:     nil,
-		firstChecksum: sum,
+	return &HistoryNode{
+		content:  &contents,
+		parent:   nil,
+		patches:  nil,
+		checksum: sum,
+		children: nil,
 	}
 }
 
-// AddCommit adds a commit if necessary and returns whether
-// it added a commit.
-func (history *History) AddCommit(contents string) bool {
-	if contents == history.last {
-		return false
-	}
+// AddCommit adds a commit if necessary and returns
+// the created node or nil if nothing was created.
+func (history *HistoryNode) AddCommit(contents string) *HistoryNode {
 	sum := sha1.Sum([]byte(contents))
-	history.checksums = append(history.checksums, sum)
+	if sum == history.checksum {
+		return nil
+	}
 	dmp := diffmatchpatch.New()
-	diffs := dmp.DiffMain(history.last, contents, false)
-	patch := dmp.PatchMake(diffs)
-	history.patches = append(history.patches, dmp.PatchToText(patch))
-	history.last = contents
-	return true
+	diffs := dmp.DiffMain(history.Content(), contents, false)
+	patches := dmp.PatchMake(diffs)
+	newNode := &HistoryNode{
+		content:  nil,
+		parent:   history,
+		patches:  patches,
+		checksum: sum,
+		children: nil,
+	}
+	history.children = append(history.children, newNode)
+	return newNode
 }
 
-func (history *History) GetContentAtChecksum(sum Sha) (string, error) {
-	if sum == history.firstChecksum {
-		return history.first, nil
+func (history *HistoryNode) PathFromRoot() []*HistoryNode {
+	nodes := []*HistoryNode{history}
+	ptr := history.parent
+	for ptr != nil {
+		nodes = append(nodes, ptr)
+		ptr = ptr.parent
 	}
-	for i, historySum := range history.checksums {
-		if historySum == sum {
-			patchStrings := history.patches[:i+1]
-			dmp := diffmatchpatch.New()
-			var patches []diffmatchpatch.Patch
-			for _, str := range patchStrings {
-				newPatches, _ := dmp.PatchFromText(str)
-				patches = append(patches, newPatches...)
-			}
-			newContent, _ := dmp.PatchApply(patches, history.first)
-			return newContent, nil
-		}
+	for i := 0; i < len(nodes)/2; i++ {
+		tmp := nodes[i]
+		nodes[i] = nodes[len(nodes)-i-1]
+		nodes[len(nodes)-i-1] = tmp
 	}
-	return "", fmt.Errorf("failed to find %x in history", sum)
+	return nodes
+}
+
+// Content returns the content corresponding to this node
+func (history *HistoryNode) Content() string {
+	if history.parent == nil {
+		return *history.content
+	}
+	path := history.PathFromRoot()
+	baseContent := *path[0].content
+	var patches []diffmatchpatch.Patch
+	for _, node := range path[1:] {
+		patches = append(patches, node.patches...)
+	}
+	dmp := diffmatchpatch.New()
+	currentContent, _ := dmp.PatchApply(patches, baseContent)
+	return currentContent
 }
