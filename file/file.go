@@ -2,6 +2,7 @@ package file
 
 import (
 	"bytes"
+	"crypto/sha1"
 	"fmt"
 	"io"
 	"os"
@@ -27,6 +28,7 @@ func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create dot file")
 	}
+	defer file.Close()
 	var buf bytes.Buffer
 	_, err = io.Copy(&buf, file)
 	if err != nil {
@@ -56,6 +58,11 @@ func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
 	return dotFile, nil
 }
 
+func (file *DotFile) NameHash() string {
+	sum := sha1.Sum([]byte(file.path))
+	return fmt.Sprintf("%x", sum)
+}
+
 func (file *DotFile) AddCommit() (bool, error) {
 	if !file.hasHistory {
 		return false, fmt.Errorf("failed to create commit: file without history")
@@ -64,13 +71,14 @@ func (file *DotFile) AddCommit() (bool, error) {
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create commit")
 	}
+	defer osFile.Close()
 	var buf bytes.Buffer
 	_, err = io.Copy(&buf, osFile)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create commit")
 	}
 	node := file.currentHistory.AddCommit(buf.String())
-	if node != nil {
+	if node == nil {
 		return false, nil
 	} else {
 		file.currentHistory = node
