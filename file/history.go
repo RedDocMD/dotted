@@ -3,6 +3,7 @@ package file
 import (
 	"crypto/sha1"
 
+	"github.com/google/uuid"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -14,18 +15,21 @@ type HistoryNode struct {
 	patches  []diffmatchpatch.Patch
 	checksum Sha
 	children []*HistoryNode
+	uuid     uuid.UUID
 }
 
 // NewHistory creates a new history tree and returns
 // the root node.
 func NewHistory(contents string) *HistoryNode {
 	sum := sha1.Sum([]byte(contents))
+	uuid := uuid.New()
 	return &HistoryNode{
 		content:  &contents,
 		parent:   nil,
 		patches:  nil,
 		checksum: sum,
 		children: nil,
+		uuid:     uuid,
 	}
 }
 
@@ -39,12 +43,14 @@ func (history *HistoryNode) AddCommit(contents string) *HistoryNode {
 	dmp := diffmatchpatch.New()
 	diffs := dmp.DiffMain(history.Content(), contents, false)
 	patches := dmp.PatchMake(diffs)
+	uuid := uuid.New()
 	newNode := &HistoryNode{
 		content:  nil,
 		parent:   history,
 		patches:  patches,
 		checksum: sum,
 		children: nil,
+		uuid:     uuid,
 	}
 	history.children = append(history.children, newNode)
 	return newNode
