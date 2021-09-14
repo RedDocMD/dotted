@@ -10,7 +10,7 @@ type Sha = [sha1.Size]byte
 
 type HistoryNode struct {
 	content  *string
-	parent   *HistoryNode
+	parent   *HistoryNode // RI: (parent != nil) ^ (content != nil) == 1
 	patches  []diffmatchpatch.Patch
 	checksum Sha
 	children []*HistoryNode
