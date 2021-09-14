@@ -2,6 +2,8 @@ package file
 
 import (
 	"crypto/sha1"
+	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/sergi/go-diff/diffmatchpatch"
@@ -56,7 +58,7 @@ func (history *HistoryNode) AddCommit(contents string) *HistoryNode {
 	return newNode
 }
 
-func (history *HistoryNode) PathFromRoot() []*HistoryNode {
+func (history *HistoryNode) pathFromRoot() []*HistoryNode {
 	nodes := []*HistoryNode{history}
 	ptr := history.parent
 	for ptr != nil {
@@ -76,7 +78,7 @@ func (history *HistoryNode) Content() string {
 	if history.parent == nil {
 		return *history.content
 	}
-	path := history.PathFromRoot()
+	path := history.pathFromRoot()
 	baseContent := *path[0].content
 	var patches []diffmatchpatch.Patch
 	for _, node := range path[1:] {
@@ -85,4 +87,51 @@ func (history *HistoryNode) Content() string {
 	dmp := diffmatchpatch.New()
 	currentContent, _ := dmp.PatchApply(patches, baseContent)
 	return currentContent
+}
+
+type jsonHistoryNode struct {
+	Parent   string
+	Patches  string
+	Checksum string
+	Children []string
+	Uuid     string
+}
+
+func newJsonHistoryNode(node *HistoryNode) jsonHistoryNode {
+	dmp := diffmatchpatch.New()
+	patches := dmp.PatchToText(node.patches)
+	checksum := fmt.Sprintf("%x", node.checksum)
+	children := make([]string, len(node.children))
+	for i, child := range node.children {
+		children[i] = child.uuid.String()
+	}
+	var parentUuid string
+	if node.parent == nil {
+		parentUuid = ""
+	} else {
+		parentUuid = node.parent.uuid.String()
+	}
+	return jsonHistoryNode{
+		Parent:   parentUuid,
+		Patches:  patches,
+		Checksum: checksum,
+		Children: children,
+		Uuid:     node.uuid.String(),
+	}
+}
+
+// All nodes in the sub-tree rooted at node
+func (node *HistoryNode) toJsonNodes() []jsonHistoryNode {
+	jsonNodes := []jsonHistoryNode{newJsonHistoryNode(node)}
+	for _, child := range node.children {
+		childNodes := child.toJsonNodes()
+		jsonNodes = append(jsonNodes, childNodes...)
+	}
+	return jsonNodes
+}
+
+func (node *HistoryNode) ToJSON() []byte {
+	nodes := node.toJsonNodes()
+	bytes, _ := json.Marshal(nodes)
+	return bytes
 }
