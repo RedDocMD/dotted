@@ -112,3 +112,51 @@ func (file *DotFile) MetadataToJSON() []byte {
 	}
 	return bytes
 }
+
+func (file *DotFile) SaveToDisk(basePath string) error {
+	if file.hasHistory {
+		historyFilePath := filepath.Join(basePath, "history")
+		historyFile, err := os.Create(historyFilePath)
+		if err != nil {
+			return errors.WithMessage(err, "failed to save dot file to disk")
+		}
+		defer historyFile.Close()
+		historyData := file.historyRoot.ToJSON()
+		historyDataBuf := bytes.NewBuffer(historyData)
+		_, err = io.Copy(historyFile, historyDataBuf)
+		if err != nil {
+			return errors.WithMessage(err, "failed to save dot file to disk")
+		}
+	}
+
+	var content string
+	if file.hasHistory {
+		content = *file.historyRoot.content
+	} else {
+		content = *file.content
+	}
+	contentFilePath := filepath.Join(basePath, "content")
+	contentFile, err := os.Create(contentFilePath)
+	if err != nil {
+		return errors.WithMessage(err, "failed to save dot file to disk")
+	}
+	defer contentFile.Close()
+	_, err = contentFile.WriteString(content)
+	if err != nil {
+		return errors.WithMessage(err, "failed to save dot file to disk")
+	}
+
+	metadataFilePath := filepath.Join(basePath, "metadata")
+	metadataFile, err := os.Create(metadataFilePath)
+	if err != nil {
+		return errors.WithMessage(err, "failed to save dot file to disk")
+	}
+	defer metadataFile.Close()
+	metadata := file.MetadataToJSON()
+	metadataBuf := bytes.NewBuffer(metadata)
+	_, err = io.Copy(metadataFile, metadataBuf)
+	if err != nil {
+		return errors.WithMessage(err, "failed to save dot file to disk")
+	}
+	return nil
+}
