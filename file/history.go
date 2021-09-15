@@ -91,6 +91,19 @@ func (history *HistoryNode) Content() string {
 	return currentContent
 }
 
+func (node *HistoryNode) NodeWithUUID(uuid string) *HistoryNode {
+	if node.uuid.String() == uuid {
+		return node
+	}
+	for _, child := range node.children {
+		subNode := child.NodeWithUUID(uuid)
+		if subNode != nil {
+			return subNode
+		}
+	}
+	return nil
+}
+
 type jsonHistoryNode struct {
 	Parent   string
 	Patches  string

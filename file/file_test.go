@@ -103,7 +103,7 @@ func TestDotFileNameHash(t *testing.T) {
 	}
 }
 
-func TestDotFileToJSON(t *testing.T) {
+func TestDotFileMetadataToJSON(t *testing.T) {
 	assert := assert.New(t)
 	firstPath, _ := filepath.Abs(filepath.Join("testdata", "first.txt"))
 	dotFile, _ := NewDotFile(firstPath, "first", true)
@@ -115,4 +115,24 @@ func TestDotFileToJSON(t *testing.T) {
 	}
 	assert.Equal(values["Mnemonic"], "first")
 	assert.Equal(values["HasHistory"], true)
+}
+
+func TestDotFileStoreAndLoad(t *testing.T) {
+	assert := assert.New(t)
+	firstPath, _ := filepath.Abs(filepath.Join("testdata", "first.txt"))
+	dotFile, _ := NewDotFile(firstPath, "first", true)
+	storePath := filepath.Join("testdata", "store")
+	err := os.Mkdir(storePath, os.ModePerm)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = dotFile.SaveToDisk(storePath)
+	assert.Equal(err, nil)
+	restoredDotFile, err := LoadDotFileFromDisk(storePath, firstPath)
+	assert.Equal(err, nil)
+	assert.Equal(dotFile, restoredDotFile)
+	err = os.RemoveAll(storePath)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

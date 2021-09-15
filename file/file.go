@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -159,4 +160,54 @@ func (file *DotFile) SaveToDisk(basePath string) error {
 		return errors.WithMessage(err, "failed to save dot file to disk")
 	}
 	return nil
+}
+
+func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
+	if !filepath.IsAbs(dotFilePath) {
+		return nil, fmt.Errorf(fmt.Sprintf("failed to read dot file from disk: %s is not absolute path", dotFilePath))
+	}
+	metadataFilePath := filepath.Join(basePath, "metadata")
+	metadataBytes, err := ioutil.ReadFile(metadataFilePath)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+	}
+	var metadata jsonDotFileMetadata
+	err = json.Unmarshal(metadataBytes, &metadata)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+	}
+	contentFilePath := filepath.Join(basePath, "content")
+	contentBytes, err := ioutil.ReadFile(contentFilePath)
+	if err != nil {
+		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+	}
+	content := string(contentBytes)
+	var historyRoot, currentHistory *HistoryNode
+	var dotFileContent *string
+	if metadata.HasHistory {
+		historyFilePath := filepath.Join(basePath, "history")
+		historyFileBytes, err := ioutil.ReadFile(historyFilePath)
+		if err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+		}
+		historyRoot, err = FromJSON(historyFileBytes, content)
+		if err != nil {
+			return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+		}
+		currentHistory = historyRoot.NodeWithUUID(metadata.CurrentHistory)
+		if currentHistory == nil {
+			return nil, fmt.Errorf(fmt.Sprintf("failed to read dot file from disk, %s not found as current history", metadata.CurrentHistory))
+		}
+	} else {
+		dotFileContent = &content
+	}
+	dotFile := &DotFile{
+		path:           dotFilePath,
+		mnemonic:       metadata.Mnemonic,
+		historyRoot:    historyRoot,
+		currentHistory: currentHistory,
+		hasHistory:     metadata.HasHistory,
+		content:        dotFileContent,
+	}
+	return dotFile, nil
 }
