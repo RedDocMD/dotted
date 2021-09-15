@@ -2,6 +2,7 @@ package file
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -71,22 +72,32 @@ func copyToFile(t *testing.T, path string, content *bytes.Buffer) {
 
 func TestDotFileNameHash(t *testing.T) {
 	assert := assert.New(t)
-	firstPath, _ := filepath.Abs(filepath.Join("testdata", "first.txt"))
-	secondPath, _ := filepath.Abs(filepath.Join("testdata", "second.txt"))
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	configPath := filepath.Join(homedir, ".config")
+	err = os.Mkdir(configPath, os.ModeDir|os.ModePerm)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		t.Fatal(err)
+	}
+	filePath := filepath.Join(configPath, "dotted.yaml")
+	osFile, err := os.Create(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	osFile.Close()
 
-	firstFile, err := NewDotFile(firstPath, "first", true)
+	file, err := NewDotFile(filePath, "first", true)
 	assert.Equal(err, nil)
 	if runtime.GOOS == "windows" {
-		assert.Equal("d7b2f8b446d2a3caa72f37bb90d4f1821e6340df", firstFile.NameHash())
+		assert.Equal("", file.NameHash())
 	} else {
-		assert.Equal("65c4309953d88144d1f3ee0694d068413a9edf11", firstFile.NameHash())
+		assert.Equal("1cc58199db412f2610d547f76fefc9f8b90aae8d", file.NameHash())
 	}
 
-	secondFile, err := NewDotFile(secondPath, "second", false)
-	assert.Equal(err, nil)
-	if runtime.GOOS == "windows" {
-		assert.Equal("af1959c46e62c5944ab4441437c39fdbde3cd636", secondFile.NameHash())
-	} else {
-		assert.Equal("c539e8f55898550d5dc52225e0433e8b512e7032", secondFile.NameHash())
+	err = os.Remove(filePath)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
