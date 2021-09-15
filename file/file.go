@@ -59,7 +59,13 @@ func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
 }
 
 func (file *DotFile) NameHash() string {
-	sum := sha1.Sum([]byte(file.path))
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to retrieve user home directory")
+		os.Exit(1)
+	}
+	path := file.path[len(homedir)+1:]
+	sum := sha1.Sum([]byte(path))
 	return fmt.Sprintf("%x", sum)
 }
 
