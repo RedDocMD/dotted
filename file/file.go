@@ -3,6 +3,7 @@ package file
 import (
 	"bytes"
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -90,4 +91,24 @@ func (file *DotFile) AddCommit() (bool, error) {
 		file.currentHistory = node
 		return true, nil
 	}
+}
+
+type jsonDotFileMetadata struct {
+	Mnemonic       string
+	HasHistory     bool
+	CurrentHistory string // UUID of node
+}
+
+func (file *DotFile) MetadataToJSON() []byte {
+	jsonFile := jsonDotFileMetadata{
+		Mnemonic:       file.mnemonic,
+		HasHistory:     file.hasHistory,
+		CurrentHistory: file.currentHistory.uuid.String(),
+	}
+	bytes, err := json.Marshal(jsonFile)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to convert dot file to JSON: %v\n", file)
+		os.Exit(1)
+	}
+	return bytes
 }

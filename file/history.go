@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -190,7 +191,11 @@ func (node *HistoryNode) toJsonNodes() []jsonHistoryNode {
 
 func (node *HistoryNode) ToJSON() []byte {
 	nodes := node.toJsonNodes()
-	bytes, _ := json.Marshal(nodes)
+	bytes, err := json.Marshal(nodes)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to convert history node to JSON: %v\n", node)
+		os.Exit(1)
+	}
 	return bytes
 }
 

@@ -2,6 +2,7 @@ package file
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"io"
 	"os"
@@ -100,4 +101,18 @@ func TestDotFileNameHash(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestDotFileToJSON(t *testing.T) {
+	assert := assert.New(t)
+	firstPath, _ := filepath.Abs(filepath.Join("testdata", "first.txt"))
+	dotFile, _ := NewDotFile(firstPath, "first", true)
+	dotFileJson := dotFile.MetadataToJSON()
+	var values map[string]interface{}
+	err := json.Unmarshal(dotFileJson, &values)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(values["Mnemonic"], "first")
+	assert.Equal(values["HasHistory"], true)
 }
