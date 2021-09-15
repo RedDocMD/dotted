@@ -41,3 +41,34 @@ func TestParseConfig(t *testing.T) {
 	}
 	assert.Equal(expectedConfig, config)
 }
+
+func TestParseInvalidConfig(t *testing.T) {
+	configPath := filepath.Join("testdata", "invalid_config1.yml")
+	_, err := ReadConfig(configPath)
+	assert.NotNil(t, err)
+}
+
+func TestParseIncompleteConfig(t *testing.T) {
+	assert := assert.New(t)
+	configPath := filepath.Join("testdata", "config2.yml")
+	config, err := ReadConfig(configPath)
+	assert.Equal(err, nil)
+	expectedConfig := &Config{
+		WithHistory: []FileEntry{
+			{
+				Path:     ".config/alacritty/alacritty.yml",
+				Mnemonic: "alacritty",
+			},
+			{
+				Path:     ".bashrc",
+				Mnemonic: "bashrc",
+			},
+			{
+				Path:     ".config/fish/config.fish",
+				Mnemonic: "",
+			},
+		},
+		StoreLocation: ".config/dotted/store",
+	}
+	assert.Equal(expectedConfig, config)
+}

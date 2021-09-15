@@ -1,0 +1,8 @@
+withHistory:
+  - path: .config/alacritty/alacritty.yml
+    mnemonic: alacritty
+  - path: .bashrc
+    mnemonic: bashrc
+  - path: .config/fish/config.fish
+
+storeLocation: .config/dotted/store
