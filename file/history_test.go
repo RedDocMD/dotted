@@ -68,3 +68,12 @@ func makeTree() *HistoryNode {
 	a.AddCommit("hello6")
 	return root
 }
+
+func TestJsonToTree(t *testing.T) {
+	assert := assert.New(t)
+	tree := makeTree()
+	jsonBytes := tree.ToJSON()
+	decodedTree, err := FromJSON(jsonBytes, "hello")
+	assert.Equal(err, nil)
+	assert.Equal(tree, decodedTree)
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -28,9 +29,9 @@ func NewHistory(contents string) *HistoryNode {
 	return &HistoryNode{
 		content:  &contents,
 		parent:   nil,
-		patches:  nil,
+		patches:  []diffmatchpatch.Patch{},
 		checksum: sum,
-		children: nil,
+		children: []*HistoryNode{},
 		uuid:     uuid,
 	}
 }
@@ -51,7 +52,7 @@ func (history *HistoryNode) AddCommit(contents string) *HistoryNode {
 		parent:   history,
 		patches:  patches,
 		checksum: sum,
-		children: nil,
+		children: []*HistoryNode{},
 		uuid:     uuid,
 	}
 	history.children = append(history.children, newNode)
@@ -120,6 +121,63 @@ func newJsonHistoryNode(node *HistoryNode) jsonHistoryNode {
 	}
 }
 
+func decodeJsonHistoryNode(node jsonHistoryNode, parent *HistoryNode, content *string) (*HistoryNode, error) {
+	dmp := diffmatchpatch.New()
+	patches, err := dmp.PatchFromText(node.Patches)
+	if err != nil {
+		return nil, err
+	}
+	uuid, err := uuid.Parse(node.Uuid)
+	if err != nil {
+		return nil, err
+	}
+	checksum, err := parseChecksum(node.Checksum)
+	if err != nil {
+		return nil, err
+	}
+	newNode := &HistoryNode{
+		content:  content,
+		parent:   parent,
+		children: []*HistoryNode{},
+		patches:  patches,
+		checksum: checksum,
+		uuid:     uuid,
+	}
+	return newNode, nil
+}
+
+func hexDigitToDecimal(digit byte) (uint8, error) {
+	if digit >= '0' && digit <= '9' {
+		return digit - '0', nil
+	} else if digit >= 'a' && digit <= 'z' {
+		return 10 + digit - 'a', nil
+	} else if digit >= 'A' && digit <= 'Z' {
+		return 10 + digit - 'A', nil
+	} else {
+		return 0, fmt.Errorf("invalid hex digit")
+	}
+}
+
+func parseChecksum(str string) (Sha, error) {
+	var sum Sha
+	if len(str) != 40 {
+		return sum, fmt.Errorf("failed to parse SHA1 sum: invalid checksum length: %d, expected 40", len(str))
+	}
+	for i := 0; i < len(str); i += 2 {
+		first, err := hexDigitToDecimal(str[i])
+		if err != nil {
+			return sum, errors.Wrap(err, "failed to parse SHA1 sum")
+		}
+		second, err := hexDigitToDecimal(str[i+1])
+		if err != nil {
+			return sum, errors.Wrap(err, "failed to parse SHA1 sum")
+		}
+		value := first*16 + second
+		sum[i/2] = value
+	}
+	return sum, nil
+}
+
 // All nodes in the sub-tree rooted at node
 func (node *HistoryNode) toJsonNodes() []jsonHistoryNode {
 	jsonNodes := []jsonHistoryNode{newJsonHistoryNode(node)}
@@ -134,4 +192,40 @@ func (node *HistoryNode) ToJSON() []byte {
 	nodes := node.toJsonNodes()
 	bytes, _ := json.Marshal(nodes)
 	return bytes
+}
+
+func FromJSON(data []byte, content string) (*HistoryNode, error) {
+	var jsonNodes []jsonHistoryNode
+	err := json.Unmarshal(data, &jsonNodes)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode history")
+	}
+	jsonNodesMap := make(map[string]jsonHistoryNode)
+	var rootJsonNode jsonHistoryNode
+	for _, node := range jsonNodes {
+		jsonNodesMap[node.Uuid] = node
+		if node.Parent == "" {
+			rootJsonNode = node
+		}
+	}
+	rootNode, err := decodeJsonHistoryNode(rootJsonNode, nil, &content)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode node")
+	}
+	stack := []*HistoryNode{rootNode}
+	for len(stack) != 0 {
+		ptr := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+		jsonNode := jsonNodesMap[ptr.uuid.String()]
+		for _, childUuid := range jsonNode.Children {
+			childJsonNode := jsonNodesMap[childUuid]
+			childNode, err := decodeJsonHistoryNode(childJsonNode, ptr, nil)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to decode node")
+			}
+			ptr.children = append(ptr.children, childNode)
+			stack = append(stack, childNode)
+		}
+	}
+	return rootNode, nil
 }
