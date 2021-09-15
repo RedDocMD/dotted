@@ -91,7 +91,7 @@ func TestDotFileNameHash(t *testing.T) {
 	file, err := NewDotFile(filePath, "first", true)
 	assert.Equal(err, nil)
 	if runtime.GOOS == "windows" {
-		assert.Equal("", file.NameHash())
+		assert.Equal("195f56a15cad7a5576ad5fff1491db609aacd529", file.NameHash())
 	} else {
 		assert.Equal("1cc58199db412f2610d547f76fefc9f8b90aae8d", file.NameHash())
 	}
