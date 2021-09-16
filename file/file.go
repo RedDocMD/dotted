@@ -22,6 +22,34 @@ type DotFile struct {
 	content        *string // RI: hasHistory ^ (content != nil) == 1
 }
 
+func (file *DotFile) HasHistory() bool {
+	return file.hasHistory
+}
+
+func (file *DotFile) RemoveHistory() {
+	if !file.hasHistory {
+		fmt.Fprintf(os.Stderr, "%s does not have a history, cannot remove it.\n", file.path)
+		os.Exit(1)
+	}
+	currentContent := file.currentHistory.Content()
+	file.content = &currentContent
+	file.hasHistory = false
+	file.currentHistory = nil
+	file.historyRoot = nil
+}
+
+func (file *DotFile) InitHistory() {
+	if file.hasHistory {
+		fmt.Fprintf(os.Stderr, "%s already has a history, cannot init it.\n", file.path)
+		os.Exit(1)
+	}
+	historyRoot := NewHistory(*file.content)
+	file.hasHistory = true
+	file.historyRoot = historyRoot
+	file.currentHistory = historyRoot
+	file.content = nil
+}
+
 func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
 	if !filepath.IsAbs(path) {
 		return nil, fmt.Errorf("failed to create dot file: %s is not absolute path", path)
@@ -162,9 +190,14 @@ func (file *DotFile) SaveToDisk(basePath string) error {
 	return nil
 }
 
+var BasePathNotFound = errors.New("base path directory not found")
+
 func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
 	if !filepath.IsAbs(dotFilePath) {
 		return nil, fmt.Errorf(fmt.Sprintf("failed to read dot file from disk: %s is not absolute path", dotFilePath))
+	}
+	if stat, err := os.Stat(basePath); os.IsNotExist(err) || !stat.IsDir() {
+		return nil, BasePathNotFound
 	}
 	metadataFilePath := filepath.Join(basePath, "metadata")
 	metadataBytes, err := ioutil.ReadFile(metadataFilePath)
