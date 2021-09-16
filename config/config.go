@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/RedDocMD/dotted/fs"
 	"github.com/pkg/errors"
@@ -50,7 +49,7 @@ func (config Config) validateConfig() error {
 		return errors.New("invalid config: empty store location")
 	}
 	for _, entry := range config.WithHistory {
-		if filepath.IsAbs(entry.Path) {
+		if Fs.IsAbs(entry.Path) {
 			return errors.New(fmt.Sprintf("invalid config: %s is an absolute path, all paths must be relative to $HOME", entry.Path))
 		}
 	}

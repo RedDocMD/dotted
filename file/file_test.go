@@ -2,9 +2,6 @@ package file
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/RedDocMD/dotted/fs"
@@ -31,26 +28,19 @@ func (suite *DotFileTestSuite) SetupSuite() {
 }
 
 func (suite *DotFileTestSuite) SetupTest() {
-	pwd, err := os.Getwd()
-	if err != nil {
-		suite.T().Fatal(err)
-	}
-	homedir, err := os.UserHomeDir()
-	if err != nil {
-		suite.T().Fatal(err)
-	}
-	basedir := filepath.Join(pwd, "testdata")
+	homedir := Fs.UserHomeDir()
+	basedir := Fs.Join(homedir, "testdata")
 	Fs.MkdirAll(basedir, 0755)
 	Fs.Mkdir("testdata", 0755)
-	suite.firstPath = filepath.Join(basedir, "first.txt")
+	suite.firstPath = Fs.Join(basedir, "first.txt")
 	Afs.WriteFile(suite.firstPath, []byte(globalFirstFileContent), 0644)
-	suite.firstRelativePath = filepath.Join("testdata", "first.txt")
+	suite.firstRelativePath = Fs.Join("testdata", "first.txt")
 	Afs.WriteFile(suite.firstRelativePath, []byte(globalFirstFileContent), 0644)
-	suite.secondPath = filepath.Join(basedir, "second.txt")
+	suite.secondPath = Fs.Join(basedir, "second.txt")
 	Afs.WriteFile(suite.secondPath, []byte(globalSecondFileContent), 0644)
-	suite.configPath = filepath.Join(homedir, ".config", "dotted.yaml")
+	suite.configPath = Fs.Join(homedir, ".config", "dotted.yaml")
 	Afs.Create(suite.configPath)
-	suite.storePath = filepath.Join("testdir", "store")
+	suite.storePath = Fs.Join("testdir", "store")
 	Afs.Mkdir(suite.storePath, 0644)
 }
 
@@ -108,11 +98,7 @@ func (suite *DotFileTestSuite) TestDotFileNameHash() {
 	assert := assert.New(suite.T())
 	file, err := NewDotFile(suite.configPath, "config", true)
 	assert.Equal(err, nil)
-	if runtime.GOOS == "windows" {
-		assert.Equal("195f56a15cad7a5576ad5fff1491db609aacd529", file.NameHash())
-	} else {
-		assert.Equal("1cc58199db412f2610d547f76fefc9f8b90aae8d", file.NameHash())
-	}
+	assert.Equal("1cc58199db412f2610d547f76fefc9f8b90aae8d", file.NameHash())
 }
 
 func (suite *DotFileTestSuite) TestDotFileMetadataToJSON() {

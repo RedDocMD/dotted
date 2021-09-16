@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 
 	"github.com/RedDocMD/dotted/fs"
 	"github.com/pkg/errors"
@@ -54,7 +53,7 @@ func (file *DotFile) InitHistory() {
 }
 
 func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
-	if !filepath.IsAbs(path) {
+	if !Fs.IsAbs(path) {
 		return nil, fmt.Errorf("failed to create dot file: %s is not absolute path", path)
 	}
 	buf, err := Afs.ReadFile(path)
@@ -135,7 +134,7 @@ func (file *DotFile) MetadataToJSON() []byte {
 
 func (file *DotFile) SaveToDisk(basePath string) error {
 	if file.hasHistory {
-		historyFilePath := filepath.Join(basePath, "history")
+		historyFilePath := Fs.Join(basePath, "history")
 		historyFile, err := Afs.Create(historyFilePath)
 		if err != nil {
 			return errors.WithMessage(err, "failed to save dot file to disk")
@@ -155,7 +154,7 @@ func (file *DotFile) SaveToDisk(basePath string) error {
 	} else {
 		content = *file.content
 	}
-	contentFilePath := filepath.Join(basePath, "content")
+	contentFilePath := Fs.Join(basePath, "content")
 	contentFile, err := Afs.Create(contentFilePath)
 	if err != nil {
 		return errors.WithMessage(err, "failed to save dot file to disk")
@@ -166,7 +165,7 @@ func (file *DotFile) SaveToDisk(basePath string) error {
 		return errors.WithMessage(err, "failed to save dot file to disk")
 	}
 
-	metadataFilePath := filepath.Join(basePath, "metadata")
+	metadataFilePath := Fs.Join(basePath, "metadata")
 	metadataFile, err := Afs.Create(metadataFilePath)
 	if err != nil {
 		return errors.WithMessage(err, "failed to save dot file to disk")
@@ -184,13 +183,13 @@ func (file *DotFile) SaveToDisk(basePath string) error {
 var BasePathNotFound = errors.New("base path directory not found")
 
 func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
-	if !filepath.IsAbs(dotFilePath) {
+	if !Fs.IsAbs(dotFilePath) {
 		return nil, fmt.Errorf(fmt.Sprintf("failed to read dot file from disk: %s is not absolute path", dotFilePath))
 	}
 	if stat, err := Fs.Stat(basePath); os.IsNotExist(err) || !stat.IsDir() {
 		return nil, BasePathNotFound
 	}
-	metadataFilePath := filepath.Join(basePath, "metadata")
+	metadataFilePath := Fs.Join(basePath, "metadata")
 	metadataBytes, err := Afs.ReadFile(metadataFilePath)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
@@ -200,7 +199,7 @@ func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
 	}
-	contentFilePath := filepath.Join(basePath, "content")
+	contentFilePath := Fs.Join(basePath, "content")
 	contentBytes, err := Afs.ReadFile(contentFilePath)
 	if err != nil {
 		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
@@ -209,7 +208,7 @@ func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
 	var historyRoot, currentHistory *HistoryNode
 	var dotFileContent *string
 	if metadata.HasHistory {
-		historyFilePath := filepath.Join(basePath, "history")
+		historyFilePath := Fs.Join(basePath, "history")
 		historyFileBytes, err := Afs.ReadFile(historyFilePath)
 		if err != nil {
 			return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
