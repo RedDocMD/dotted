@@ -3,15 +3,18 @@ package store
 import (
 	"crypto/sha1"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/RedDocMD/dotted/config"
 	"github.com/RedDocMD/dotted/file"
+	"github.com/RedDocMD/dotted/fs"
 	"github.com/pkg/errors"
 )
+
+var Fs = fs.OsFs
+var Afs = fs.OsAfs
 
 type Store struct {
 	files []*file.DotFile
@@ -21,7 +24,7 @@ type Store struct {
 
 func LoadStore(config *config.Config) (*Store, error) {
 	pathFilePath := filepath.Join(config.StoreLocation, "paths")
-	pathFileBytes, err := ioutil.ReadFile(pathFilePath)
+	pathFileBytes, err := Afs.ReadFile(pathFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load store")
 	}
