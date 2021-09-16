@@ -1,6 +1,7 @@
 withHistory:
   - path: .config/alacritty/alacritty.yml
     mnemonic: alacritty
+    # Invalid key
     holy: ghost
   - path: .bashrc
     mnemonic: bashrc

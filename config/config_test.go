@@ -53,6 +53,9 @@ func TestParseInvalidConfig(t *testing.T) {
 	configPath = filepath.Join("testdata", "invalid_config3.yml")
 	_, err = ReadConfig(configPath)
 	assert.NotNil(t, err)
+	configPath = filepath.Join("testdata", "invalid_config4.yml")
+	_, err = ReadConfig(configPath)
+	assert.NotNil(t, err)
 }
 
 func TestParseIncompleteConfig(t *testing.T) {

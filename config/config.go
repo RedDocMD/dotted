@@ -1,7 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -29,19 +32,32 @@ func ReadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to parse config")
 	}
-	if config.validateConfig() {
-		return &config, nil
+	if err := config.validateConfig(); err != nil {
+		return nil, err
 	} else {
-		return nil, errors.New("Name or StoreLocation is empty")
+		return &config, nil
 	}
 }
 
-func (config *Config) validateConfig() bool {
-	if config == nil {
+func (config Config) validateConfig() error {
+	if len(config.Name) == 0 {
+		return errors.New("invalid config: empty name")
+	}
+	if len(config.StoreLocation) == 0 {
+		return errors.New("invalid config: empty store location")
+	}
+	for _, entry := range config.WithHistory {
+		if filepath.IsAbs(entry.Path) {
+			return errors.New(fmt.Sprintf("invalid config: %s is an absolute path, all paths must be relative to $HOME", entry.Path))
+		}
+	}
+	return nil
+}
+
+func (config *Config) IsStoreAvailable() bool {
+	stat, err := os.Stat(config.StoreLocation)
+	if os.IsNotExist(err) {
 		return false
 	}
-	if len(config.Name) == 0 || len(config.StoreLocation) == 0 {
-		return false
-	}
-	return true
+	return stat.IsDir()
 }
