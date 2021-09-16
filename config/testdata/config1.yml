@@ -1,3 +1,5 @@
+name: Linux
+
 withHistory:
   - path: .config/alacritty/alacritty.yml
     mnemonic: alacritty

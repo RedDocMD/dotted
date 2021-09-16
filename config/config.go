@@ -8,6 +8,7 @@ import (
 )
 
 type Config struct {
+	Name           string      `yaml:"name"`
 	WithHistory    []FileEntry `yaml:"withHistory"`
 	WithoutHistory []FileEntry `yaml:"withoutHistory"`
 	StoreLocation  string      `yaml:"storeLocation"`
@@ -28,5 +29,19 @@ func ReadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to parse config")
 	}
-	return &config, nil
+	if config.validateConfig() {
+		return &config, nil
+	} else {
+		return nil, errors.New("Name or StoreLocation is empty")
+	}
+}
+
+func (config *Config) validateConfig() bool {
+	if config == nil {
+		return false
+	}
+	if len(config.Name) == 0 || len(config.StoreLocation) == 0 {
+		return false
+	}
+	return true
 }

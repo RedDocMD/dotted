@@ -7,4 +7,4 @@ withHistory:
     mnemonic: bashrc
   - path: .config/fish/config.fish
 
-storeLocation: .config/dotted/store
+storeLocation:
