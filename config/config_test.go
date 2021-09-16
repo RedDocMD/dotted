@@ -2,6 +2,7 @@ package config
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,7 +54,11 @@ func TestParseInvalidConfig(t *testing.T) {
 	configPath = filepath.Join("testdata", "invalid_config3.yml")
 	_, err = ReadConfig(configPath)
 	assert.NotNil(t, err)
-	configPath = filepath.Join("testdata", "invalid_config4.yml")
+	if runtime.GOOS == "windows" {
+		configPath = filepath.Join("testdata", "invalid_config4_windows.yml")
+	} else {
+		configPath = filepath.Join("testdata", "invalid_config4_linux.yml")
+	}
 	_, err = ReadConfig(configPath)
 	assert.NotNil(t, err)
 }
