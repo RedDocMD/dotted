@@ -2,13 +2,16 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/RedDocMD/dotted/fs"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
+
+var Fs = fs.OsFs
+var Afs = fs.OsAfs
 
 type Config struct {
 	Name           string      `yaml:"name"`
@@ -23,7 +26,7 @@ type FileEntry struct {
 }
 
 func ReadConfig(path string) (*Config, error) {
-	configBytes, err := ioutil.ReadFile(path)
+	configBytes, err := Afs.ReadFile(path)
 	if err != nil {
 		return nil, errors.WithMessage(err, "failed to read config")
 	}
@@ -55,7 +58,7 @@ func (config Config) validateConfig() error {
 }
 
 func (config *Config) IsStoreAvailable() bool {
-	stat, err := os.Stat(config.StoreLocation)
+	stat, err := Fs.Stat(config.StoreLocation)
 	if os.IsNotExist(err) {
 		return false
 	}
