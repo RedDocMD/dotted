@@ -115,10 +115,14 @@ type jsonDotFileMetadata struct {
 }
 
 func (file *DotFile) MetadataToJSON() []byte {
+	var currentHistory string
+	if file.currentHistory != nil {
+		currentHistory = file.currentHistory.uuid.String()
+	}
 	jsonFile := jsonDotFileMetadata{
 		Mnemonic:       file.mnemonic,
 		HasHistory:     file.hasHistory,
-		CurrentHistory: file.currentHistory.uuid.String(),
+		CurrentHistory: currentHistory,
 	}
 	bytes, err := json.Marshal(jsonFile)
 	if err != nil {

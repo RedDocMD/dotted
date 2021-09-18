@@ -112,6 +112,15 @@ func (suite *DotFileTestSuite) TestDotFileMetadataToJSON() {
 	}
 	assert.Equal(values["Mnemonic"], "first")
 	assert.Equal(values["HasHistory"], true)
+
+	dotFile, _ = NewDotFile(suite.firstPath, "first", false)
+	dotFileJson = dotFile.MetadataToJSON()
+	err = json.Unmarshal(dotFileJson, &values)
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+	assert.Equal(values["Mnemonic"], "first")
+	assert.Equal(values["HasHistory"], false)
 }
 
 func (suite *DotFileTestSuite) TestDotFileStoreAndLoad() {
@@ -120,6 +129,13 @@ func (suite *DotFileTestSuite) TestDotFileStoreAndLoad() {
 	err := dotFile.SaveToDisk(suite.storePath)
 	assert.Equal(err, nil)
 	restoredDotFile, err := LoadDotFileFromDisk(suite.storePath, suite.firstPath)
+	assert.Equal(err, nil)
+	assert.Equal(dotFile, restoredDotFile)
+
+	dotFile, _ = NewDotFile(suite.firstPath, "first", false)
+	err = dotFile.SaveToDisk(suite.storePath)
+	assert.Equal(err, nil)
+	restoredDotFile, err = LoadDotFileFromDisk(suite.storePath, suite.firstPath)
 	assert.Equal(err, nil)
 	assert.Equal(dotFile, restoredDotFile)
 }
