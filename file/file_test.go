@@ -94,11 +94,18 @@ func (suite *DotFileTestSuite) TestCommitDotFile() {
 	assert.False(changed)
 }
 
-func (suite *DotFileTestSuite) TestDotFileNameHash() {
+func (suite *DotFileTestSuite) TestDotFileRelativePathHash() {
 	assert := assert.New(suite.T())
 	file, err := NewDotFile(suite.configPath, "config", true)
 	assert.Equal(err, nil)
-	assert.Equal("1cc58199db412f2610d547f76fefc9f8b90aae8d", file.NameHash())
+	assert.Equal("1cc58199db412f2610d547f76fefc9f8b90aae8d", file.RelativePathHash())
+}
+
+func (suite *DotFileTestSuite) TestDotFileRelativePath() {
+	assert := assert.New(suite.T())
+	file, err := NewDotFile(suite.configPath, "config", true)
+	assert.Equal(err, nil)
+	assert.Equal(".config/dotted.yaml", file.RelativePath())
 }
 
 func (suite *DotFileTestSuite) TestDotFileMetadataToJSON() {

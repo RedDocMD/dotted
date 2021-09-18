@@ -88,9 +88,14 @@ func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
 	return dotFile, nil
 }
 
-func (file *DotFile) NameHash() string {
+func (file *DotFile) RelativePath() string {
 	homedir := Fs.UserHomeDir()
 	path := file.path[len(homedir)+1:]
+	return path
+}
+
+func (file *DotFile) RelativePathHash() string {
+	path := file.RelativePath()
 	sum := sha1.Sum([]byte(path))
 	return fmt.Sprintf("%x", sum)
 }
