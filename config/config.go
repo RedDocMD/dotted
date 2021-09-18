@@ -37,6 +37,7 @@ func ReadConfig(path string) (*Config, error) {
 	if err := config.validateConfig(); err != nil {
 		return nil, err
 	} else {
+		config.StoreLocation = Fs.Abs(config.StoreLocation)
 		return &config, nil
 	}
 }

@@ -5,11 +5,25 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/RedDocMD/dotted/fs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestParseConfig(t *testing.T) {
-	assert := assert.New(t)
+type ConfigSuite struct{ suite.Suite }
+
+func (suite *Config) SetupSuite() {
+	Fs = fs.MockFs
+	Afs = fs.MockAfs
+}
+
+func (suite *Config) TearDownSuite() {
+	Fs = fs.OsFs
+	Afs = fs.OsAfs
+}
+
+func (suite *ConfigSuite) TestParseConfig() {
+	assert := assert.New(suite.T())
 	configPath := filepath.Join("testdata", "config1.yml")
 	config, err := ReadConfig(configPath)
 	assert.Equal(err, nil)
@@ -39,12 +53,13 @@ func TestParseConfig(t *testing.T) {
 				Mnemonic: "",
 			},
 		},
-		StoreLocation: ".config/dotted/store",
+		StoreLocation: Fs.Abs(".config/dotted/store"),
 	}
 	assert.Equal(expectedConfig, config)
 }
 
-func TestParseInvalidConfig(t *testing.T) {
+func (suite *ConfigSuite) TestParseInvalidConfig() {
+	t := suite.T()
 	configPath := filepath.Join("testdata", "invalid_config1.yml")
 	_, err := ReadConfig(configPath)
 	assert.NotNil(t, err)
@@ -63,8 +78,8 @@ func TestParseInvalidConfig(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestParseIncompleteConfig(t *testing.T) {
-	assert := assert.New(t)
+func (suite *ConfigSuite) TestParseIncompleteConfig() {
+	assert := assert.New(suite.T())
 	configPath := filepath.Join("testdata", "config2.yml")
 	config, err := ReadConfig(configPath)
 	assert.Equal(err, nil)
@@ -84,7 +99,11 @@ func TestParseIncompleteConfig(t *testing.T) {
 				Mnemonic: "",
 			},
 		},
-		StoreLocation: ".config/dotted/store",
+		StoreLocation: Fs.Abs(".config/dotted/store"),
 	}
 	assert.Equal(expectedConfig, config)
+}
+
+func TestSuite(t *testing.T) {
+	suite.Run(t, &ConfigSuite{})
 }
