@@ -190,8 +190,11 @@ func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
 	if !Fs.IsAbs(dotFilePath) {
 		return nil, fmt.Errorf(fmt.Sprintf("failed to read dot file from disk: %s is not absolute path", dotFilePath))
 	}
-	if stat, err := Fs.Stat(basePath); os.IsNotExist(err) || !stat.IsDir() {
+	if exists, err := Afs.DirExists(basePath); err == nil && !exists {
 		return nil, BasePathNotFound
+	} else if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to check for existence of %s\n", basePath)
+		os.Exit(1)
 	}
 	metadataFilePath := Fs.Join(basePath, "metadata")
 	metadataBytes, err := Afs.ReadFile(metadataFilePath)

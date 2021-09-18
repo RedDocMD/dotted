@@ -3,8 +3,6 @@ package store
 import (
 	"crypto/sha1"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/RedDocMD/dotted/config"
@@ -23,7 +21,7 @@ type Store struct {
 }
 
 func LoadStore(config *config.Config) (*Store, error) {
-	pathFilePath := filepath.Join(config.StoreLocation, "paths")
+	pathFilePath := Fs.Join(config.StoreLocation, "paths")
 	pathFileBytes, err := Afs.ReadFile(pathFilePath)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to load store")
@@ -32,13 +30,13 @@ func LoadStore(config *config.Config) (*Store, error) {
 	pathsDone := make(map[string]struct{})
 	var dotFiles []*file.DotFile
 	for _, path := range paths {
-		basePath := filepath.Join(config.StoreLocation, storePath(path))
-		dotFile, err := file.LoadDotFileFromDisk(basePath, path)
+		basePath := Fs.Join(config.StoreLocation, storePath(path))
+		dotFile, err := file.LoadDotFileFromDisk(basePath, Fs.Abs(path))
 		if err != nil && !errors.Is(err, file.BasePathNotFound) {
-			return nil, errors.WithMessage(err, "failed to load store")
+			return nil, errors.Wrap(err, "failed to load store")
 		}
 		var fileInStore, fileInConfig, fileHasHistory bool
-		fileInStore = !errors.Is(err, file.BasePathNotFound)
+		fileInStore = err == nil
 		if containsPath(path, config.WithHistory) {
 			fileInConfig = true
 			fileHasHistory = true
@@ -53,22 +51,22 @@ func LoadStore(config *config.Config) (*Store, error) {
 				dotFile.InitHistory()
 			}
 			dotFiles = append(dotFiles, dotFile)
-		} else if fileInStore && !fileInConfig {
-			err = os.RemoveAll(path)
+			pathsDone[path] = struct{}{}
+		} else if !fileInConfig && fileInStore {
+			err = Afs.RemoveAll(basePath)
 			if err != nil {
-				return nil, errors.WithMessage(err, "failed to load store")
+				return nil, errors.Wrap(err, "failed to load store")
 			}
-		} else {
+		} else if !fileInConfig && !fileInStore {
 			return nil, errors.New(fmt.Sprintf("failed to load store: store in inconsistent state: directory for %s listed but not found", path))
 		}
-		pathsDone[path] = struct{}{}
 	}
 	for _, entry := range config.WithHistory {
 		path := entry.Path
 		if _, ok := pathsDone[path]; !ok {
-			dotFile, err := file.NewDotFile(path, entry.Mnemonic, true)
+			dotFile, err := file.NewDotFile(Fs.Abs(path), entry.Mnemonic, true)
 			if err != nil {
-				return nil, errors.WithMessage(err, "failed to load store")
+				return nil, errors.Wrap(err, "failed to load store")
 			}
 			dotFiles = append(dotFiles, dotFile)
 		}
@@ -76,9 +74,9 @@ func LoadStore(config *config.Config) (*Store, error) {
 	for _, entry := range config.WithoutHistory {
 		path := entry.Path
 		if _, ok := pathsDone[path]; !ok {
-			dotFile, err := file.NewDotFile(path, entry.Mnemonic, false)
+			dotFile, err := file.NewDotFile(Fs.Abs(path), entry.Mnemonic, false)
 			if err != nil {
-				return nil, errors.WithMessage(err, "failed to load store")
+				return nil, errors.Wrap(err, "failed to load store")
 			}
 			dotFiles = append(dotFiles, dotFile)
 		}
