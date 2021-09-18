@@ -52,6 +52,10 @@ func (file *DotFile) InitHistory() {
 	file.content = nil
 }
 
+func (file *DotFile) Path() string {
+	return file.path
+}
+
 func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
 	if !Fs.IsAbs(path) {
 		return nil, fmt.Errorf("failed to create dot file: %s is not absolute path", path)
@@ -137,14 +141,14 @@ func (file *DotFile) SaveToDisk(basePath string) error {
 		historyFilePath := Fs.Join(basePath, "history")
 		historyFile, err := Afs.Create(historyFilePath)
 		if err != nil {
-			return errors.WithMessage(err, "failed to save dot file to disk")
+			return errors.Wrap(err, "failed to save dot file to disk")
 		}
 		defer historyFile.Close()
 		historyData := file.historyRoot.ToJSON()
 		historyDataBuf := bytes.NewBuffer(historyData)
 		_, err = io.Copy(historyFile, historyDataBuf)
 		if err != nil {
-			return errors.WithMessage(err, "failed to save dot file to disk")
+			return errors.Wrap(err, "failed to save dot file to disk")
 		}
 	}
 
@@ -157,25 +161,25 @@ func (file *DotFile) SaveToDisk(basePath string) error {
 	contentFilePath := Fs.Join(basePath, "content")
 	contentFile, err := Afs.Create(contentFilePath)
 	if err != nil {
-		return errors.WithMessage(err, "failed to save dot file to disk")
+		return errors.Wrap(err, "failed to save dot file to disk")
 	}
 	defer contentFile.Close()
 	_, err = contentFile.WriteString(content)
 	if err != nil {
-		return errors.WithMessage(err, "failed to save dot file to disk")
+		return errors.Wrap(err, "failed to save dot file to disk")
 	}
 
 	metadataFilePath := Fs.Join(basePath, "metadata")
 	metadataFile, err := Afs.Create(metadataFilePath)
 	if err != nil {
-		return errors.WithMessage(err, "failed to save dot file to disk")
+		return errors.Wrap(err, "failed to save dot file to disk")
 	}
 	defer metadataFile.Close()
 	metadata := file.MetadataToJSON()
 	metadataBuf := bytes.NewBuffer(metadata)
 	_, err = io.Copy(metadataFile, metadataBuf)
 	if err != nil {
-		return errors.WithMessage(err, "failed to save dot file to disk")
+		return errors.Wrap(err, "failed to save dot file to disk")
 	}
 	return nil
 }
@@ -192,17 +196,17 @@ func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
 	metadataFilePath := Fs.Join(basePath, "metadata")
 	metadataBytes, err := Afs.ReadFile(metadataFilePath)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
 	}
 	var metadata jsonDotFileMetadata
 	err = json.Unmarshal(metadataBytes, &metadata)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
 	}
 	contentFilePath := Fs.Join(basePath, "content")
 	contentBytes, err := Afs.ReadFile(contentFilePath)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+		return nil, errors.Wrap(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
 	}
 	content := string(contentBytes)
 	var historyRoot, currentHistory *HistoryNode
@@ -211,11 +215,11 @@ func LoadDotFileFromDisk(basePath, dotFilePath string) (*DotFile, error) {
 		historyFilePath := Fs.Join(basePath, "history")
 		historyFileBytes, err := Afs.ReadFile(historyFilePath)
 		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
 		}
 		historyRoot, err = FromJSON(historyFileBytes, content)
 		if err != nil {
-			return nil, errors.WithMessage(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
+			return nil, errors.Wrap(err, fmt.Sprintf("failed to read dot file from disk: %s", basePath))
 		}
 		currentHistory = historyRoot.NodeWithUUID(metadata.CurrentHistory)
 		if currentHistory == nil {

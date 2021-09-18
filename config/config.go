@@ -27,12 +27,12 @@ type FileEntry struct {
 func ReadConfig(path string) (*Config, error) {
 	configBytes, err := Afs.ReadFile(path)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to read config")
+		return nil, errors.Wrap(err, "failed to read config")
 	}
 	var config Config
 	err = yaml.UnmarshalStrict(configBytes, &config)
 	if err != nil {
-		return nil, errors.WithMessage(err, "failed to parse config")
+		return nil, errors.Wrap(err, "failed to parse config")
 	}
 	if err := config.validateConfig(); err != nil {
 		return nil, err
