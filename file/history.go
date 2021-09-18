@@ -88,6 +88,10 @@ func (history *HistoryNode) Content() string {
 	}
 	dmp := diffmatchpatch.New()
 	currentContent, _ := dmp.PatchApply(patches, baseContent)
+	if sha1.Sum([]byte(currentContent)) != history.checksum {
+		fmt.Fprintf(os.Stderr, "checksum of file at history %s doesn't match", history.uuid)
+		os.Exit(1)
+	}
 	return currentContent
 }
 
