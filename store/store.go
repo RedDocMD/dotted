@@ -128,7 +128,10 @@ func (store *Store) SaveToDisk() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to save store to disk")
 		}
-		file.SaveToDisk(fileDir)
+		err = file.SaveToDisk(fileDir)
+		if err != nil {
+			return errors.Wrap(err, "failed to save store to disk")
+		}
 	}
 	return nil
 }
