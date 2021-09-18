@@ -114,7 +114,7 @@ func (suite *StoreSuite) TestLoadStoreMatchConfig() {
 		},
 		StoreLocation: "store",
 	}
-	store, err := LoadStore(config)
+	store, err := LoadFromDisk(config)
 	suite.Nil(err)
 
 	suite.Equal(store.path, "store")
@@ -158,7 +158,7 @@ func (suite *StoreSuite) TestLoadStoreFileNotInStore() {
 	}
 	Afs.RemoveAll("store/14b4f00abd93c6222516ff054e4a9f66295d03fa")
 
-	store, err := LoadStore(config)
+	store, err := LoadFromDisk(config)
 	suite.Nil(err)
 
 	suite.Equal(store.path, "store")
@@ -185,7 +185,7 @@ func (suite *StoreSuite) TestLoadStoreFileNotInConfig() {
 		StoreLocation:  "store",
 	}
 
-	store, err := LoadStore(config)
+	store, err := LoadFromDisk(config)
 	suite.Nil(err)
 
 	suite.Equal(store.path, "store")
@@ -198,4 +198,29 @@ func (suite *StoreSuite) TestLoadStoreFileNotInConfig() {
 	suite.True(exists)
 	exists, _ = Afs.DirExists("store/97aa776c8b768a52732c7978fd5f0af5ce5a1135")
 	suite.False(exists)
+}
+
+func (suite *StoreSuite) TestSaveNewStore() {
+	Afs.RemoveAll("store")
+	config := &config.Config{
+		Name: "Linux",
+		WithHistory: []config.FileEntry{
+			{
+				Path:     ".config/alacritty/alacritty.yml",
+				Mnemonic: "alacritty",
+			},
+		},
+		WithoutHistory: []config.FileEntry{
+			{
+				Path:     ".tmux.conf",
+				Mnemonic: "tmux",
+			},
+		},
+		StoreLocation: "store",
+	}
+	store, err := LoadFromDisk(config)
+	suite.Nil(err)
+
+	err = store.SaveToDisk()
+	suite.Nil(err)
 }
