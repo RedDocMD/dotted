@@ -29,17 +29,22 @@ func (table FileTable) ColumnCount() int {
 }
 
 func (table FileTable) Value(row, column int) string {
-	file := table[row]
-	if column == 0 {
-		return file.Path()
-	} else if column == 1 {
-		return file.Mnemonic()
-	} else if column == 2 {
-		hasHistory := file.HasHistory()
-		if hasHistory {
-			return "🗸"
-		} else {
-			return "✗"
+	var columnHeaders = [3]string{"Path", "Mnemonic", "Has History"}
+	if row == 0 {
+		return columnHeaders[column]
+	} else {
+		file := table[row-1]
+		if column == 0 {
+			return file.Path()
+		} else if column == 1 {
+			return file.Mnemonic()
+		} else if column == 2 {
+			hasHistory := file.HasHistory()
+			if hasHistory {
+				return "🗸"
+			} else {
+				return "✗"
+			}
 		}
 	}
 	// Should not reach the following
