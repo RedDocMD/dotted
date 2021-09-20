@@ -26,6 +26,7 @@ func TablePrint(table TablePrinter) {
 	columnWidths := make([]int, table.ColumnCount())
 	rows := table.RowCount()
 	cols := table.ColumnCount()
+	ipad := table.Ipad()
 	for i := 0; i < cols; i++ {
 		for j := 0; j < rows; j++ {
 			width := utf8.RuneCountInString(table.Value(j, i))
@@ -33,13 +34,12 @@ func TablePrint(table TablePrinter) {
 				columnWidths[i] = width
 			}
 		}
-		columnWidths[i] += 2 * table.Ipad()
 	}
 	for row := 0; row < rows; row++ {
 		if row == 0 {
 			fmt.Print("\u250C")
 			for col := 0; col < cols; col++ {
-				fmt.Print(rule(columnWidths[col]))
+				fmt.Print(rule(columnWidths[col] + 2*ipad))
 				if col != cols-1 {
 					fmt.Print("\u252C")
 				}
@@ -48,7 +48,7 @@ func TablePrint(table TablePrinter) {
 		} else {
 			fmt.Print("\u251C")
 			for col := 0; col < cols; col++ {
-				fmt.Print(rule(columnWidths[col]))
+				fmt.Print(rule(columnWidths[col] + 2*ipad))
 				if col != cols-1 {
 					fmt.Print("\u253C")
 				}
@@ -58,14 +58,14 @@ func TablePrint(table TablePrinter) {
 		for col := 0; col < cols; col++ {
 			fmt.Printf("\u2502%s",
 				pad(table.Value(row, col),
-					columnWidths[col],
+					columnWidths[col], ipad,
 					table.ColumnAlignment(col)))
 		}
 		fmt.Println("\u2502")
 	}
 	fmt.Print("\u2514")
 	for col := 0; col < cols; col++ {
-		fmt.Print(rule(columnWidths[col]))
+		fmt.Print(rule(columnWidths[col] + 2*ipad))
 		if col != cols-1 {
 			fmt.Print("\u2534")
 		}
@@ -81,8 +81,9 @@ func rule(width int) string {
 	return strings.Repeat("\u2500", width)
 }
 
-func pad(s string, width int, alignment ColumnAlignment) string {
+func pad(s string, width, ipad int, alignment ColumnAlignment) string {
 	var res string
+
 	rest := width - utf8.RuneCountInString(s)
 	switch alignment {
 	case RightAlign:
@@ -94,5 +95,6 @@ func pad(s string, width int, alignment ColumnAlignment) string {
 		right := rest - left
 		res = spacer(left) + s + spacer(right)
 	}
-	return res
+	pad := spacer(ipad)
+	return pad + res + pad
 }

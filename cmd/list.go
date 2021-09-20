@@ -21,7 +21,7 @@ var listCmd = &cobra.Command{
 type FileTable []*file.DotFile
 
 func (table FileTable) RowCount() int {
-	return len(table)
+	return len(table) + 1
 }
 
 func (table FileTable) ColumnCount() int {
@@ -54,7 +54,7 @@ func (table FileTable) Value(row, column int) string {
 }
 
 func (table FileTable) Ipad() int {
-	return 2
+	return 1
 }
 
 func (table FileTable) ColumnAlignment(column int) printer.ColumnAlignment {
