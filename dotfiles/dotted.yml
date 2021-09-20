@@ -1,0 +1,15 @@
+name: Debian
+
+withHistory:
+  - path: .config/alacritty/alacritty.yml
+    mnemonic: alacritty
+  - path: .config/nvim/init.vim
+    mnemonic: nvim
+  - path: .zshrc
+
+withoutHistory:
+  - path: .config/fish/config.fish
+  - path: .tmux.conf
+    mnemonic: tmux
+
+storeLocation: /root/store

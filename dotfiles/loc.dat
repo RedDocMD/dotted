@@ -1,0 +1,6 @@
+alacritty.yml .config/alacritty/alacritty.yml
+init.vim .config/nvim/init.vim
+config.fish .config/fish/config.fish
+zshrc .zshrc
+tmux.conf .tmux.conf
+dotted.yml .config/dotted/dotted.yml
