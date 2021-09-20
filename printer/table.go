@@ -15,25 +15,25 @@ const (
 )
 
 type TablePrinter interface {
-	rowCount() int
-	columnCount() int
-	value(row, column int) string
-	ipad() int
-	columnAlignment(column int) ColumnAlignment
+	RowCount() int
+	ColumnCount() int
+	Value(row, column int) string
+	Ipad() int
+	ColumnAlignment(column int) ColumnAlignment
 }
 
 func TablePrint(table TablePrinter) {
-	columnWidths := make([]int, table.columnCount())
-	rows := table.rowCount()
-	cols := table.columnCount()
+	columnWidths := make([]int, table.ColumnCount())
+	rows := table.RowCount()
+	cols := table.ColumnCount()
 	for i := 0; i < cols; i++ {
 		for j := 0; j < rows; j++ {
-			width := utf8.RuneCountInString(table.value(j, i))
+			width := utf8.RuneCountInString(table.Value(j, i))
 			if columnWidths[i] < width {
 				columnWidths[i] = width
 			}
 		}
-		columnWidths[i] += 2 * table.ipad()
+		columnWidths[i] += 2 * table.Ipad()
 	}
 	for row := 0; row < rows; row++ {
 		if row == 0 {
@@ -57,9 +57,9 @@ func TablePrint(table TablePrinter) {
 		}
 		for col := 0; col < cols; col++ {
 			fmt.Printf("\u2502%s",
-				pad(table.value(row, col),
+				pad(table.Value(row, col),
 					columnWidths[col],
-					table.columnAlignment(col)))
+					table.ColumnAlignment(col)))
 		}
 		fmt.Println("\u2502")
 	}

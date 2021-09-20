@@ -24,6 +24,10 @@ type DotFile struct {
 	content        *string // RI: hasHistory ^ (content != nil) == 1
 }
 
+func (file *DotFile) Mnemonic() string {
+	return file.mnemonic
+}
+
 func (file *DotFile) HasHistory() bool {
 	return file.hasHistory
 }

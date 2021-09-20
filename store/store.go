@@ -21,6 +21,14 @@ type Store struct {
 	name  string
 }
 
+func (store *Store) Files() []*file.DotFile {
+	return store.files
+}
+
+func dotFilePath(path string) string {
+	return Fs.Join(Fs.UserHomeDir(), path)
+}
+
 func LoadFromDisk(config *config.Config) (*Store, error) {
 	pathsDone := make(map[string]struct{})
 	var dotFiles []*file.DotFile
@@ -34,7 +42,7 @@ func LoadFromDisk(config *config.Config) (*Store, error) {
 		}
 		for _, path := range paths {
 			basePath := Fs.Join(config.StoreLocation, storePath(path))
-			dotFile, err := file.LoadDotFileFromDisk(basePath, Fs.Abs(path))
+			dotFile, err := file.LoadDotFileFromDisk(basePath, dotFilePath(path))
 			if err != nil && !errors.Is(err, file.BasePathNotFound) {
 				return nil, errors.Wrap(err, "failed to load store")
 			}
@@ -70,7 +78,7 @@ func LoadFromDisk(config *config.Config) (*Store, error) {
 	for _, entry := range config.WithHistory {
 		path := entry.Path
 		if _, ok := pathsDone[path]; !ok {
-			dotFile, err := file.NewDotFile(Fs.Abs(path), entry.Mnemonic, true)
+			dotFile, err := file.NewDotFile(dotFilePath(path), entry.Mnemonic, true)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load store")
 			}
@@ -80,7 +88,7 @@ func LoadFromDisk(config *config.Config) (*Store, error) {
 	for _, entry := range config.WithoutHistory {
 		path := entry.Path
 		if _, ok := pathsDone[path]; !ok {
-			dotFile, err := file.NewDotFile(Fs.Abs(path), entry.Mnemonic, false)
+			dotFile, err := file.NewDotFile(dotFilePath(path), entry.Mnemonic, false)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to load store")
 			}
