@@ -32,10 +32,10 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize(initConfigAndStore)
 }
 
-func initConfig() {
+func initConfigAndStore() {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
@@ -50,6 +50,18 @@ func initConfig() {
 	err = viper.ReadInConfig()
 	if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 		fmt.Fprintln(os.Stderr, "failed to find config file")
+		os.Exit(1)
+	}
+	path := viper.GetViper().ConfigFileUsed()
+	configs, err = config.ReadConfig(path)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	fileStore, err = store.LoadFromDisk(configs)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
