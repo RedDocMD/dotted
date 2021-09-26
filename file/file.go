@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/RedDocMD/dotted/fs"
 	"github.com/pkg/errors"
@@ -49,11 +50,18 @@ func (file *DotFile) InitHistory() {
 		fmt.Fprintf(os.Stderr, "%s already has a history, cannot init it.\n", file.path)
 		os.Exit(1)
 	}
-	historyRoot := NewHistory(*file.content)
+	historyRoot := NewHistory(*file.content, currentTime())
 	file.hasHistory = true
 	file.historyRoot = historyRoot
 	file.currentHistory = historyRoot
 	file.content = nil
+}
+
+func currentTime() time.Time {
+	timeNow := time.Now()
+	timeNowString := timeNow.Format(time.UnixDate)
+	timeNowUnix, _ := time.Parse(time.UnixDate, timeNowString)
+	return timeNowUnix
 }
 
 func (file *DotFile) Path() string {
@@ -80,7 +88,7 @@ func NewDotFile(path, mnemonic string, hasHistory bool) (*DotFile, error) {
 		}
 		return dotFile, nil
 	}
-	history := NewHistory(content)
+	history := NewHistory(content, currentTime())
 	dotFile := &DotFile{
 		path:           path,
 		mnemonic:       mnemonic,
@@ -112,7 +120,7 @@ func (file *DotFile) AddCommit() (bool, error) {
 	if err != nil {
 		return false, errors.Wrap(err, "failed to create commit")
 	}
-	node := file.currentHistory.AddCommit(string(buf))
+	node := file.currentHistory.AddCommit(string(buf), currentTime())
 	if node == nil {
 		return false, nil
 	} else {
