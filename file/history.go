@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -14,32 +15,34 @@ import (
 type Sha = [sha1.Size]byte
 
 type HistoryNode struct {
-	content  *string
-	parent   *HistoryNode // RI: (parent != nil) ^ (content != nil) == 1
-	patches  []diffmatchpatch.Patch
-	checksum Sha
-	children []*HistoryNode
-	uuid     uuid.UUID
+	content   *string
+	parent    *HistoryNode // RI: (parent != nil) ^ (content != nil) == 1
+	patches   []diffmatchpatch.Patch
+	checksum  Sha
+	children  []*HistoryNode
+	uuid      uuid.UUID
+	timestamp time.Time
 }
 
 // NewHistory creates a new history tree and returns
 // the root node.
-func NewHistory(contents string) *HistoryNode {
+func NewHistory(contents string, timestamp time.Time) *HistoryNode {
 	sum := sha1.Sum([]byte(contents))
 	uuid := uuid.New()
 	return &HistoryNode{
-		content:  &contents,
-		parent:   nil,
-		patches:  []diffmatchpatch.Patch{},
-		checksum: sum,
-		children: []*HistoryNode{},
-		uuid:     uuid,
+		content:   &contents,
+		parent:    nil,
+		patches:   []diffmatchpatch.Patch{},
+		checksum:  sum,
+		children:  []*HistoryNode{},
+		uuid:      uuid,
+		timestamp: timestamp,
 	}
 }
 
 // AddCommit adds a commit if necessary and returns
 // the created node or nil if nothing was created.
-func (history *HistoryNode) AddCommit(contents string) *HistoryNode {
+func (history *HistoryNode) AddCommit(contents string, timestamp time.Time) *HistoryNode {
 	sum := sha1.Sum([]byte(contents))
 	if sum == history.checksum {
 		return nil
@@ -49,12 +52,13 @@ func (history *HistoryNode) AddCommit(contents string) *HistoryNode {
 	patches := dmp.PatchMake(diffs)
 	uuid := uuid.New()
 	newNode := &HistoryNode{
-		content:  nil,
-		parent:   history,
-		patches:  patches,
-		checksum: sum,
-		children: []*HistoryNode{},
-		uuid:     uuid,
+		content:   nil,
+		parent:    history,
+		patches:   patches,
+		checksum:  sum,
+		children:  []*HistoryNode{},
+		uuid:      uuid,
+		timestamp: timestamp,
 	}
 	history.children = append(history.children, newNode)
 	return newNode
@@ -109,11 +113,12 @@ func (node *HistoryNode) NodeWithUUID(uuid string) *HistoryNode {
 }
 
 type jsonHistoryNode struct {
-	Parent   string
-	Patches  string
-	Checksum string
-	Children []string
-	Uuid     string
+	Parent    string
+	Patches   string
+	Checksum  string
+	Children  []string
+	Uuid      string
+	Timestamp string
 }
 
 func newJsonHistoryNode(node *HistoryNode) jsonHistoryNode {
@@ -130,12 +135,14 @@ func newJsonHistoryNode(node *HistoryNode) jsonHistoryNode {
 	} else {
 		parentUuid = node.parent.uuid.String()
 	}
+	timestamp := node.timestamp.Format(time.UnixDate)
 	return jsonHistoryNode{
-		Parent:   parentUuid,
-		Patches:  patches,
-		Checksum: checksum,
-		Children: children,
-		Uuid:     node.uuid.String(),
+		Parent:    parentUuid,
+		Patches:   patches,
+		Checksum:  checksum,
+		Children:  children,
+		Uuid:      node.uuid.String(),
+		Timestamp: string(timestamp),
 	}
 }
 
@@ -153,13 +160,18 @@ func decodeJsonHistoryNode(node jsonHistoryNode, parent *HistoryNode, content *s
 	if err != nil {
 		return nil, err
 	}
+	timestamp, err := time.Parse(time.UnixDate, node.Timestamp)
+	if err != nil {
+		return nil, err
+	}
 	newNode := &HistoryNode{
-		content:  content,
-		parent:   parent,
-		children: []*HistoryNode{},
-		patches:  patches,
-		checksum: checksum,
-		uuid:     uuid,
+		content:   content,
+		parent:    parent,
+		children:  []*HistoryNode{},
+		patches:   patches,
+		checksum:  checksum,
+		uuid:      uuid,
+		timestamp: timestamp,
 	}
 	return newNode, nil
 }

@@ -16,10 +16,10 @@ This is the second line`
 This is the modified second line`
 	const str4 = "This is the modified second line"
 
-	history1 := NewHistory(str1)
-	history2 := history1.AddCommit(str2)
-	history3 := history2.AddCommit(str3)
-	history4 := history3.AddCommit(str4)
+	history1 := NewHistory(str1, currentTime())
+	history2 := history1.AddCommit(str2, currentTime())
+	history3 := history2.AddCommit(str3, currentTime())
+	history4 := history3.AddCommit(str4, currentTime())
 
 	assert := assert.New(t)
 	newStr4 := history4.Content()
@@ -59,13 +59,13 @@ func checkString(t *testing.T, src interface{}, target string) {
 }
 
 func makeTree() *HistoryNode {
-	root := NewHistory("hello")
-	root.AddCommit("hello1")
-	a := root.AddCommit("hello2")
-	a.AddCommit("hello3")
-	b := a.AddCommit("hello4")
-	b.AddCommit("hello5")
-	a.AddCommit("hello6")
+	root := NewHistory("hello", currentTime())
+	root.AddCommit("hello1", currentTime())
+	a := root.AddCommit("hello2", currentTime())
+	a.AddCommit("hello3", currentTime())
+	b := a.AddCommit("hello4", currentTime())
+	b.AddCommit("hello5", currentTime())
+	a.AddCommit("hello6", currentTime())
 	return root
 }
 

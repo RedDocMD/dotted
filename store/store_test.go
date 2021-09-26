@@ -55,14 +55,16 @@ func (suite *StoreSuite) SetupTest() {
 		"Patches": "",
 		"Checksum": "555298afac7ed1ffbf44e9a6bc7afc09e4049ec8",
 		"Children": ["887cd650-21c0-4d1f-8e3f-c76425f550b2"],
-		"Uuid": "d032a2c2-d846-4f68-b055-5964a210d194"
+		"Uuid": "d032a2c2-d846-4f68-b055-5964a210d194",
+		"Timestamp": "Sun Sep 26 19:56:38 IST 2021"
 	},
 	{
 		"Parent": "d032a2c2-d846-4f68-b055-5964a210d194",
 		"Patches": "@@ -860,16 +860,31 @@\n OR: %221%22%0A\n+  YOLO: wuddup%0A\n %0A#window\n",
 		"Checksum": "cd4c1c9693b8fc014ddf30c1f6bf261cbba4e777",
 		"Children": [],
-		"Uuid": "887cd650-21c0-4d1f-8e3f-c76425f550b2"
+		"Uuid": "887cd650-21c0-4d1f-8e3f-c76425f550b2",
+		"Timestamp": "Sun Sep 27 08:00:15 IST 2021"
 	}
 ]
 	`
