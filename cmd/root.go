@@ -29,9 +29,11 @@ func Execute() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	if err := fileStore.SaveToDisk(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	if fileStore != nil {
+		if err := fileStore.SaveToDisk(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 }
 
