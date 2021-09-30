@@ -19,16 +19,15 @@ var commitCommand = &cobra.Command{
 			return nil
 		}
 		if !allFiles && len(args) == 0 {
-			return errors.Wrap(validationError, color.New(color.FgRed).
-				SprintFunc()("expected at least one path/mnemonic"))
+			return fmt.Errorf("expected at least one path/mnemonic")
 		}
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
+		var dotFiles []*file.DotFile
 		if allFiles {
-			return commitDotFiles(fileStore.Files())
+			dotFiles = fileStore.Files()
 		} else {
-			var dotFiles []*file.DotFile
 			for _, arg := range args {
 				if strings.HasPrefix(arg, "/") {
 					file, err := dotFileByPath(fileStore.Files(), arg)
@@ -44,8 +43,27 @@ var commitCommand = &cobra.Command{
 					dotFiles = append(dotFiles, file)
 				}
 			}
-			return commitDotFiles(dotFiles)
 		}
+		withHistory, withoutHistory := splitDotFilesByHistory(dotFiles)
+		commitCnt, err := commitDotFiles(withHistory)
+		if err != nil {
+			return err
+		}
+		updateCnt, err := updateDotFiles(withoutHistory)
+		if err != nil {
+			return err
+		}
+		if commitCnt <= 1 {
+			color.Green("Committed %d file", commitCnt)
+		} else {
+			color.Green("Committed %d files", commitCnt)
+		}
+		if updateCnt <= 1 {
+			color.Green("Updated %d file", updateCnt)
+		} else {
+			color.Green("Updated %d files", updateCnt)
+		}
+		return nil
 	},
 }
 
@@ -56,9 +74,34 @@ func initCommitCommand() {
 		"commit all dot-files that have been changed")
 }
 
-func commitDotFiles(dotFiles []*file.DotFile) error {
-	// TODO: Fill the actual commit logic
-	return nil
+func commitDotFiles(dotFiles []*file.DotFile) (int, error) {
+	cnt := 0
+	for _, dotFile := range dotFiles {
+		done, err := dotFile.AddCommit()
+		if err != nil {
+			return -1, errors.WithMessage(err, "failed to commit")
+		}
+		if done {
+			fmt.Printf("Committed %s\n", dotFile.Path())
+			cnt += 1
+		}
+	}
+	return cnt, nil
+}
+
+func updateDotFiles(dotFiles []*file.DotFile) (int, error) {
+	cnt := 0
+	for _, dotFile := range dotFiles {
+		done, err := dotFile.UpdateContent()
+		if err != nil {
+			return -1, errors.WithMessage(err, "failed to commit")
+		}
+		if done {
+			fmt.Printf("Updated %s\n", dotFile.Path())
+			cnt += 1
+		}
+	}
+	return cnt, nil
 }
 
 func dotFileByPath(dotFiles []*file.DotFile, path string) (*file.DotFile, error) {
@@ -77,4 +120,16 @@ func dotFileByMnemonic(dotFiles []*file.DotFile, mnemonic string) (*file.DotFile
 		}
 	}
 	return nil, fmt.Errorf("failed to find dotfile with mnemonic %s", mnemonic)
+}
+
+func splitDotFilesByHistory(dotFiles []*file.DotFile) ([]*file.DotFile, []*file.DotFile) {
+	var withHistory, withoutHistory []*file.DotFile
+	for _, dotFile := range dotFiles {
+		if dotFile.HasHistory() {
+			withHistory = append(withHistory, dotFile)
+		} else {
+			withoutHistory = append(withoutHistory, dotFile)
+		}
+	}
+	return withHistory, withoutHistory
 }

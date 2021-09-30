@@ -7,7 +7,6 @@ import (
 
 	"github.com/RedDocMD/dotted/config"
 	"github.com/RedDocMD/dotted/store"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -27,10 +26,7 @@ var fileStore *store.Store
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		if !errors.Is(err, validationError) {
-			fmt.Fprintln(os.Stderr, err)
-			os.Exit(1)
-		}
+		os.Exit(1)
 	}
 	if fileStore != nil {
 		if err := fileStore.SaveToDisk(); err != nil {
@@ -39,8 +35,6 @@ func Execute() {
 		}
 	}
 }
-
-var validationError error = errors.New("")
 
 func init() {
 	cobra.OnInitialize(initConfigAndStore)
