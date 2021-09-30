@@ -129,6 +129,20 @@ func (file *DotFile) AddCommit() (bool, error) {
 	}
 }
 
+func (file *DotFile) UpdateContent() (bool, error) {
+	if file.hasHistory {
+		return false, fmt.Errorf("failed to update content: file has history")
+	}
+	buf, err := Afs.ReadFile(file.path)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to update content")
+	}
+	content := string(buf)
+	changed := content != *file.content
+	file.content = &content
+	return changed, nil
+}
+
 type jsonDotFileMetadata struct {
 	Mnemonic       string
 	HasHistory     bool

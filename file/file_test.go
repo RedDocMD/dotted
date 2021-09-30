@@ -94,6 +94,30 @@ func (suite *DotFileTestSuite) TestCommitDotFile() {
 	assert.False(changed)
 }
 
+func (suite *DotFileTestSuite) TestUpdateDotFile() {
+	assert := assert.New(suite.T())
+
+	dotFileWithHistory, _ := NewDotFile(suite.firstPath, "test", true)
+	dotFileWithoutHistory, _ := NewDotFile(suite.firstPath, "test", false)
+
+	err := Afs.Remove(suite.firstPath)
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+	err = Afs.Rename(suite.secondPath, suite.firstPath)
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+
+	changed, err := dotFileWithHistory.UpdateContent()
+	assert.False(changed)
+	assert.Error(err, "failed to update content: file has history")
+
+	changed, err = dotFileWithoutHistory.UpdateContent()
+	assert.True(changed)
+	assert.Nil(err)
+}
+
 func (suite *DotFileTestSuite) TestDotFileRelativePathHash() {
 	assert := assert.New(suite.T())
 	file, err := NewDotFile(suite.configPath, "config", true)
