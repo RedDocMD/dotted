@@ -41,6 +41,8 @@ func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(commitCommand)
 	initCommitCommand()
+	rootCmd.AddCommand(historyCmd)
+	initHistoryCommand()
 }
 
 func initConfigAndStore() {
